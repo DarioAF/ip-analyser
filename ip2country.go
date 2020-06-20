@@ -17,7 +17,7 @@ func resolveCountry(ip string) (IP2countryResponse, error) {
 	parseResponse(request, &country)
 
 	if country.CountryCode3 == "" {
-		return country, fmt.Errorf("Couldn't find any country for ip: $s", ip)
+		return country, fmt.Errorf("Couldn't find any country for ip: %s", ip)
 	}
 
 	return country, nil

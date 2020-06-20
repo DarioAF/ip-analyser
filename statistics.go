@@ -37,7 +37,7 @@ func updateStat(stat, hash string, user User, strategy func(int, int) bool) {
 				store(hash, stat, user.ISOCountry+"-"+strconv.Itoa(user.Distance))
 
 			} else if currentStatDistance == user.Distance { // When equals take the one with highest score
-				userIPCountryScore := ipScore(user.ISOCountry, user.IP)
+				userIPCountryScore := countryBestScore(user.ISOCountry)
 				currentStatCountryScore := countryBestScore(val[0])
 
 				if userIPCountryScore > currentStatCountryScore {

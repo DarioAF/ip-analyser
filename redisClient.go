@@ -28,7 +28,7 @@ func ping() string {
 func exists(hash, key string) bool {
 	res, err := redisClient.HExists(redisClient.Context(), hash, key).Result()
 	if err != nil {
-		log.Panic("There was an error trying to check %s existence in %s", key, hash)
+		log.Panicf("There was an error trying to check %s existence in %s", key, hash)
 	}
 	return res
 }
@@ -36,7 +36,7 @@ func exists(hash, key string) bool {
 func retrieve(hash, key string) string {
 	res, err := redisClient.HGet(redisClient.Context(), hash, key).Result()
 	if err != nil {
-		log.Panic("There was an error trying to retrieve %s from %s", key, hash)
+		log.Panicf("There was an error trying to retrieve %s from %s", key, hash)
 	}
 	return res
 }

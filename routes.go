@@ -46,7 +46,8 @@ func userHandler(w http.ResponseWriter, req *http.Request) {
 	if isValidIP(user.IP) {
 		country, err := resolveCountry(user.IP)
 
-		if err == nil {
+		//Handle continents more gracefully (read codes from continents.csv)
+		if err == nil && country.CountryName != "Europe" && country.CountryName != "Asia/Pacific Region" {
 			start := time.Now() // measure start
 			currentTime := start.Format("02/01/2006 15:04:05")
 			distanceChan := make(chan int)
@@ -74,7 +75,7 @@ func userHandler(w http.ResponseWriter, req *http.Request) {
 
 			res, err := json.Marshal(enhancedUser)
 			if err != nil {
-				log.Panicf("There was an error marshaling our user! ", err)
+				log.Panicf("There was an error marshaling our user! %err", err)
 			}
 
 			w.Header().Add("Content-Type", "application/json")
@@ -82,7 +83,11 @@ func userHandler(w http.ResponseWriter, req *http.Request) {
 
 		} else {
 			w.Header().Add("Content-Type", "application/json")
-			io.WriteString(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()))
+			if err != nil {
+				io.WriteString(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()))
+			} else {
+				io.WriteString(w, fmt.Sprintf(`{"error":"ip address %s is asociated to a continent reather than a country, we can't handle that!"}`, err.Error()))
+			}
 		}
 	} else {
 		w.Header().Add("Content-Type", "application/json")
@@ -94,7 +99,7 @@ func nearestHandler(w http.ResponseWriter, r *http.Request) {
 	nearest := retrieveNearest()
 	res, err := json.Marshal(nearest)
 	if err != nil {
-		log.Panicf("There was an error marshaling our user! ", err)
+		log.Panicf("There was an error marshaling our user! %err", err)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -105,7 +110,7 @@ func farthestHandler(w http.ResponseWriter, r *http.Request) {
 	farthest := retrieveFarthest()
 	res, err := json.Marshal(farthest)
 	if err != nil {
-		log.Panicf("There was an error marshaling our user! ", err)
+		log.Panicf("There was an error marshaling our user! %err", err)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
