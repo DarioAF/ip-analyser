@@ -16,7 +16,7 @@ func makeStatisticResponse(str string) Statistic {
 	info := strings.Split(str, "-")
 	dst, err := strconv.Atoi(info[1])
 	if err != nil {
-		log.Panicf("Cannot convert %s to int", info[1])
+		log.Printf("ERROR: cannot convert %s to int", info[1])
 	}
 	return Statistic{info[0], dst}
 }
@@ -28,7 +28,7 @@ func updateStat(stat, hash string, user User, strategy func(int, int) bool) {
 
 		currentStatDistance, err := strconv.Atoi(val[1])
 		if err != nil {
-			log.Panicf("Cannot convert %s to int", val)
+			log.Printf("ERROR: cannot convert %s to int", val)
 		}
 
 		if !(stat == "nearest" && currentStatDistance == 0) { // If nearest is 0 we're done
@@ -36,7 +36,7 @@ func updateStat(stat, hash string, user User, strategy func(int, int) bool) {
 				log.Printf("Storing new %s distance: %s with %d km from AR", stat, user.ISOCountry, user.Distance)
 				store(hash, stat, user.ISOCountry+"-"+strconv.Itoa(user.Distance))
 
-			} else if currentStatDistance == user.Distance { // When equals take the one with highest score
+			} else if currentStatDistance == user.Distance { // When equals take the one with (country) highest score
 				userIPCountryScore := countryBestScore(user.ISOCountry)
 				currentStatCountryScore := countryBestScore(val[0])
 

@@ -25,7 +25,7 @@ Takes an object `User` with the only information we have at this point (the ip a
 input object:
 ```json
 {
-	"ip": "83.44.196.93"
+    "ip": "83.44.196.93",
 }
 ```
 

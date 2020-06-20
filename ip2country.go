@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"time"
 )
 
 // IP2countryResponse is the response from the ip2country service
@@ -26,14 +30,25 @@ func (cr IP2countryResponse) isContinent() bool {
 func resolveCountry(ip string) (IP2countryResponse, error) {
 	country := IP2countryResponse{}
 	request := "https://api.ip2country.info/ip?" + ip
-	parseResponse(request, &country)
+
+	var webClient = &http.Client{Timeout: 10 * time.Second}
+	res, err := webClient.Get(request)
+	if err != nil {
+		log.Printf("ERROR: there was an error getting: %s", request)
+	}
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&country)
+	if err != nil {
+		log.Printf("ERROR: there was an error parsing the response from %s, status code: %d", request, res.StatusCode)
+	}
 
 	if country.CountryCode3 == "" {
 		return country, fmt.Errorf("couldn't find any country for ip: %s", ip)
 	}
 
 	if country.isContinent() {
-		return country, fmt.Errorf("%s is acontinent reather than a country, we can't handle that", country.CountryName)
+		return country, fmt.Errorf("%s is a acontinent reather than a country, we can't handle that", country.CountryName)
 	}
 
 	return country, nil

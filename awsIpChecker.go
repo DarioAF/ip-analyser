@@ -36,7 +36,7 @@ func isFromAWS(userIP string) bool {
 		for _, p := range awsPrexixes.Prefixes {
 			_, ipnet, _ := net.ParseCIDR(p.Ip_prefix)
 			if ipnet.Contains(ip) {
-				log.Printf("IP: %s (ipv4) it belongs to AWS: %s", userIP, p.Ip_prefix)
+				log.Printf("IP: %s (ipv4) belongs to AWS: %s", userIP, p.Ip_prefix)
 				isAWS = true
 				break
 			}

@@ -1,5 +1,12 @@
 package main
 
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"time"
+)
+
 // IPRanges are the ip-ranges from AWS
 type IPRanges struct {
 	Prefixes      []IPv4Prefix
@@ -18,9 +25,19 @@ type IPv6Prefix struct {
 
 func resolveAWSPrefixes() IPRanges {
 	request := "https://ip-ranges.amazonaws.com/ip-ranges.json"
-
 	prefixes := IPRanges{}
-	parseResponse(request, &prefixes)
+
+	webClient := &http.Client{Timeout: 10 * time.Second}
+	res, err := webClient.Get(request)
+	if err != nil {
+		log.Printf("ERROR: there was an error getting: %s", request)
+	}
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&prefixes)
+	if err != nil {
+		log.Printf("ERROR: there was an error parsing the response from %s, status code: %d", request, res.StatusCode)
+	}
 
 	return prefixes
 }

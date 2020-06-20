@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
+	"net/http"
+	"time"
 )
 
 //RestCountriesResponse is the response from restCountries
@@ -22,9 +25,20 @@ func findLatlng(countries []RestCountriesResponse, country IP2countryResponse) [
 }
 
 func resolveCountryLocation(country IP2countryResponse) [2]float64 {
-	res := []RestCountriesResponse{}
-	uri := "https://restcountries.eu/rest/v2/name/" + country.CountryCode
-	parseResponse(uri, &res)
+	locations := []RestCountriesResponse{}
+	request := "https://restcountries.eu/rest/v2/name/" + country.CountryCode
 
-	return findLatlng(res, country)
+	var webClient = &http.Client{Timeout: 10 * time.Second}
+	res, err := webClient.Get(request)
+	if err != nil {
+		log.Printf("ERROR: there was an error getting: %s", request)
+	}
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&locations)
+	if err != nil {
+		log.Printf("ERROR: there was an error parsing the response from %s, status code: %d", request, res.StatusCode)
+	}
+
+	return findLatlng(locations, country)
 }
