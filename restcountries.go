@@ -17,7 +17,7 @@ func findLatlng(countries []RestCountriesResponse, country IP2countryResponse) [
 			return n.Latlng
 		}
 	}
-	log.Panicf("Cant find [lat, lng] for iso country: %s or name: %s", country.CountryCode3, country.CountryName)
+	log.Printf("ERROR: cannot find [lat, lng] for iso country: %s or name: %s", country.CountryCode3, country.CountryName)
 	return [2]float64{0, 0}
 }
 

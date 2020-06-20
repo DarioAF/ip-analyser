@@ -32,12 +32,12 @@ input object:
 output: 
 ```json
 {
-	"IP": "83.44.196.93",
-    "Time": "20/06/2020 02:42:46",
-    "Country": "Spain",
-    "ISOCountry": "ES",
-    "Distance": 10274,
-    "IsAWS": false
+    "ip": "83.44.196.93",
+    "time": "20/06/2020 02:42:46",
+    "country": "Spain",
+    "iso_country": "ES",
+    "distance": 10274,
+    "is_aws": false
 }
 ```
 (We will talk about each of this items later on)
@@ -65,15 +65,15 @@ Returns the nearest / farthest distance from **Argentina** to wherever the servi
 output for `/nearest` in our example:
 ```json
 {
-    "Country": "AR",
-    "Distance": 0
+    "country": "AR",
+    "distance": 0
 }
 ```
 output for `/farthest` in our example:
 ```json
 {
-    "Country": "ES",
-    "Distance": 10274
+    "country": "ES",
+    "distance": 10274
 }
 ```
 **Note:** that if there are two or more countries with the same distance from AR, only the one with more requests will be returned

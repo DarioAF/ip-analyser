@@ -27,8 +27,7 @@ func resolveIPRanges() IPRanges {
 	return ipRangesSnapshot.snapshot
 }
 
-func isFromAWS(userIP string, c chan bool) {
-	defer close(c)
+func isFromAWS(userIP string) bool {
 	awsPrexixes := resolveIPRanges()
 
 	ip := net.ParseIP(userIP)
@@ -53,5 +52,5 @@ func isFromAWS(userIP string, c chan bool) {
 		}
 	}
 
-	c <- isAWS
+	return isAWS
 }

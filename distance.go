@@ -6,28 +6,29 @@ import (
 	"strconv"
 )
 
-func resolveDistance(country IP2countryResponse, c chan int) {
-	defer close(c)
+func resolveDistance(country IP2countryResponse) int {
 	distance := 0
 
-	if country.CountryCode != "AR" {
-		hash := "distance-AR"
-
-		if exists(hash, country.CountryCode) {
-			str := retrieve(hash, country.CountryCode)
-			res, err := strconv.Atoi(str)
-			if err != nil {
-				log.Printf("Cannot parse %s to int", str)
-			}
-			distance = res
-		} else {
-			location := resolveCountryLocation(country)
-			distance = int(distanceFromARGinKM(location[0], location[1]))
-			store(hash, country.CountryCode, strconv.Itoa(distance))
-		}
+	if country.CountryCode == "AR" {
+		return 0
 	}
 
-	c <- distance
+	hash := "distance-AR"
+
+	if exists(hash, country.CountryCode) {
+		str := retrieve(hash, country.CountryCode)
+		res, err := strconv.Atoi(str)
+		if err != nil {
+			log.Printf("Cannot parse %s to int", str)
+		}
+		return res
+	}
+
+	location := resolveCountryLocation(country)
+	distance = int(distanceFromARGinKM(location[0], location[1]))
+	store(hash, country.CountryCode, strconv.Itoa(distance))
+
+	return distance
 }
 
 func distanceFromARGinKM(lat float64, lng float64) float64 {

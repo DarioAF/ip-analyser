@@ -8,8 +8,8 @@ import (
 
 // Statistic response for service
 type Statistic struct {
-	Country  string
-	Distance int
+	Country  string `json:"country"`
+	Distance int    `json:"distance"`
 }
 
 func makeStatisticResponse(str string) Statistic {

@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -18,22 +19,12 @@ type ExternalUser struct {
 
 // User is our enhanced user, containing all the aditional info
 type User struct {
-	IP         string
-	Time       string
-	Country    string
-	ISOCountry string
-	Distance   int
-	IsAWS      bool
-}
-
-func deserializeUser(body io.ReadCloser) ExternalUser {
-	decoder := json.NewDecoder(body)
-	var user ExternalUser
-	err := decoder.Decode(&user)
-	if err != nil {
-		panic(err)
-	}
-	return user
+	IP         string `json:"ip"`
+	Time       string `json:"time"`
+	Country    string `json:"country"`
+	ISOCountry string `json:"iso_country"`
+	Distance   int    `json:"distance"`
+	IsAWS      bool   `json:"is_aws"`
 }
 
 func isValidIP(ip string) bool {
@@ -42,57 +33,73 @@ func isValidIP(ip string) bool {
 
 func userHandler(w http.ResponseWriter, req *http.Request) {
 
-	user := deserializeUser(req.Body)
-	if isValidIP(user.IP) {
-		country, err := resolveCountry(user.IP)
+	var user ExternalUser
 
-		//Handle continents more gracefully (read codes from continents.csv)
-		if err == nil && country.CountryName != "Europe" && country.CountryName != "Asia/Pacific Region" {
-			start := time.Now() // measure start
-			currentTime := start.Format("02/01/2006 15:04:05")
-			distanceChan := make(chan int)
-			isAwsChan := make(chan bool)
-
-			go resolveDistance(country, distanceChan)
-			go isFromAWS(user.IP, isAwsChan)
-
-			distance := <-distanceChan
-			isAWS := <-isAwsChan
-
-			enhancedUser := User{
-				user.IP,
-				currentTime,
-				country.CountryName,
-				country.CountryCode,
-				distance,
-				isAWS}
-
-			elapsed := time.Since(start) //measure stop
-			log.Printf("analysed ip: %s (%s) in %s", enhancedUser.IP, enhancedUser.Country, elapsed)
-
-			go updateTrend(enhancedUser)
-			go updateStatistics(enhancedUser)
-
-			res, err := json.Marshal(enhancedUser)
-			if err != nil {
-				log.Panicf("There was an error marshaling our user! %err", err)
-			}
-
-			w.Header().Add("Content-Type", "application/json")
-			io.WriteString(w, string(res))
-
-		} else {
-			w.Header().Add("Content-Type", "application/json")
-			if err != nil {
-				io.WriteString(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()))
-			} else {
-				io.WriteString(w, fmt.Sprintf(`{"error":"ip address %s is asociated to a continent reather than a country, we can't handle that!"}`, err.Error()))
-			}
-		}
-	} else {
+	if err := json.NewDecoder(req.Body).Decode(&user); err != nil {
 		w.Header().Add("Content-Type", "application/json")
-		io.WriteString(w, `{"error":"invalid ip"}`)
+		w.WriteHeader(http.StatusBadRequest)
+		io.WriteString(w, fmt.Sprintf(`{"error":"invalid input: %v"}`, err))
+		return
 	}
+
+	if !isValidIP(user.IP) {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		io.WriteString(w, `{"error":"invalid ip"}`)
+		return
+	}
+
+	country, err := resolveCountry(user.IP)
+
+	if err != nil {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		io.WriteString(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()))
+		return
+	}
+
+	start := time.Now() // measure start
+	currentTime := start.Format("02/01/2006 15:04:05")
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	var distance int
+	go func() {
+		defer wg.Done()
+		distance = resolveDistance(country)
+	}()
+
+	var isAWS bool
+	go func() {
+		defer wg.Done()
+		isAWS = isFromAWS(user.IP)
+	}()
+
+	wg.Wait()
+
+	enhancedUser := User{
+		user.IP,
+		currentTime,
+		country.CountryName,
+		country.CountryCode,
+		distance,
+		isAWS}
+
+	elapsed := time.Since(start) //measure stop
+	log.Printf("analysed ip: %s (%s) in %s", enhancedUser.IP, enhancedUser.Country, elapsed)
+
+	go updateTrend(enhancedUser)
+	go updateStatistics(enhancedUser)
+
+	res, err := json.Marshal(enhancedUser)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		io.WriteString(w, fmt.Sprintf("There was an error marshaling our user: %v", err))
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	io.WriteString(w, string(res))
 }
 
 func nearestHandler(w http.ResponseWriter, r *http.Request) {
