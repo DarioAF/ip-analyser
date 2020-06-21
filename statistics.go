@@ -21,9 +21,9 @@ func makeStatisticResponse(str string) Statistic {
 	return Statistic{info[0], dst}
 }
 
-func updateStat(stat, hash string, user User, strategy func(int, int) bool) {
-	if exists(hash, stat) {
-		res := retrieve(hash, stat)
+func updateStat(db DBInterface, stat, hash string, user User, strategy func(int, int) bool) {
+	if db.Exists(hash, stat) {
+		res := db.Retrieve(hash, stat)
 		val := strings.Split(res, "-")
 
 		currentStatDistance, err := strconv.Atoi(val[1])
@@ -34,22 +34,22 @@ func updateStat(stat, hash string, user User, strategy func(int, int) bool) {
 		if !(stat == "nearest" && currentStatDistance == 0) { // If nearest is 0 we're done
 			if strategy(currentStatDistance, user.Distance) {
 				log.Printf("Storing new %s distance: %s with %d km from AR", stat, user.ISOCountry, user.Distance)
-				store(hash, stat, user.ISOCountry+"-"+strconv.Itoa(user.Distance))
+				db.Store(hash, stat, user.ISOCountry+"-"+strconv.Itoa(user.Distance))
 
 			} else if currentStatDistance == user.Distance { // When equals take the one with (country) highest score
-				userIPCountryScore := countryBestScore(user.ISOCountry)
-				currentStatCountryScore := countryBestScore(val[0])
+				userIPCountryScore := countryBestScore(db, user.ISOCountry)
+				currentStatCountryScore := countryBestScore(db, val[0])
 
 				if userIPCountryScore > currentStatCountryScore {
 					log.Printf("Storing new %s country: %s because greater score. %s has a score of: %d while %s had %d", stat, user.ISOCountry, user.ISOCountry, userIPCountryScore, val[0], currentStatCountryScore)
-					store(hash, stat, user.ISOCountry+"-"+strconv.Itoa(user.Distance))
+					db.Store(hash, stat, user.ISOCountry+"-"+strconv.Itoa(user.Distance))
 				}
 			}
 		}
 
 	} else {
 		log.Printf("Storing first %s distance: %s with %d km from AR", stat, user.ISOCountry, user.Distance)
-		store(hash, stat, user.ISOCountry+"-"+strconv.Itoa(user.Distance))
+		db.Store(hash, stat, user.ISOCountry+"-"+strconv.Itoa(user.Distance))
 	}
 }
 
@@ -60,26 +60,26 @@ func nearestStrategy(current, actual int) bool {
 	return current > actual
 }
 
-func updateStatistics(user User) {
+func updateStatistics(db DBInterface, user User) {
 	fromIata := "AR"
 	hash := "statistics-" + fromIata
 
-	updateStat("farthest", hash, user, farthestStrategy)
-	updateStat("nearest", hash, user, nearestStrategy)
+	updateStat(db, "farthest", hash, user, farthestStrategy)
+	updateStat(db, "nearest", hash, user, nearestStrategy)
 }
 
-func retrieveFarthest() Statistic {
+func retrieveFarthest(db DBInterface) Statistic {
 	fromIata := "AR"
 	hash := "statistics-" + fromIata
 	key := "farthest"
 
-	return makeStatisticResponse(retrieve(hash, key))
+	return makeStatisticResponse(db.Retrieve(hash, key))
 }
 
-func retrieveNearest() Statistic {
+func retrieveNearest(db DBInterface) Statistic {
 	fromIata := "AR"
 	hash := "statistics-" + fromIata
 	key := "nearest"
 
-	return makeStatisticResponse(retrieve(hash, key))
+	return makeStatisticResponse(db.Retrieve(hash, key))
 }

@@ -32,7 +32,6 @@ func isValidIP(ip string) bool {
 }
 
 func userHandler(w http.ResponseWriter, req *http.Request) {
-
 	var user ExternalUser
 
 	if err := json.NewDecoder(req.Body).Decode(&user); err != nil {
@@ -58,8 +57,9 @@ func userHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	start := time.Now() // measure start
+	start := time.Now()
 	currentTime := start.Format("02/01/2006 15:04:05")
+	var redis DBInterface = &db
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -67,7 +67,7 @@ func userHandler(w http.ResponseWriter, req *http.Request) {
 	var distance int
 	go func() {
 		defer wg.Done()
-		distance = resolveDistance(country)
+		distance = resolveDistance(redis, country)
 	}()
 
 	var isAWS bool
@@ -86,11 +86,11 @@ func userHandler(w http.ResponseWriter, req *http.Request) {
 		distance,
 		isAWS}
 
-	elapsed := time.Since(start) //measure stop
+	elapsed := time.Since(start)
 	log.Printf("analysed ip: %s (%s) in %s", enhancedUser.IP, enhancedUser.Country, elapsed)
 
-	go updateTrend(enhancedUser)
-	go updateStatistics(enhancedUser)
+	go updateTrend(redis, enhancedUser)
+	go updateStatistics(redis, enhancedUser)
 
 	res, err := json.Marshal(enhancedUser)
 	if err != nil {
@@ -103,10 +103,11 @@ func userHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func nearestHandler(w http.ResponseWriter, r *http.Request) {
-	nearest := retrieveNearest()
+	var redis DBInterface = &db
+	nearest := retrieveNearest(redis)
 	res, err := json.Marshal(nearest)
 	if err != nil {
-		log.Panicf("There was an error marshaling our user! %err", err)
+		log.Printf("There was an error marshaling our user! %err", err)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -114,10 +115,11 @@ func nearestHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func farthestHandler(w http.ResponseWriter, r *http.Request) {
-	farthest := retrieveFarthest()
+	var redis DBInterface = &db
+	farthest := retrieveFarthest(redis)
 	res, err := json.Marshal(farthest)
 	if err != nil {
-		log.Panicf("There was an error marshaling our user! %err", err)
+		log.Printf("There was an error marshaling our user! %err", err)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -125,8 +127,9 @@ func farthestHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func countryRequestsHandler(w http.ResponseWriter, r *http.Request) {
+	var redis DBInterface = &db
 	countryIso := r.URL.Path[len("/avg-requests/"):]
-	avg := strconv.Itoa(countryAvgRequests(countryIso))
+	avg := strconv.Itoa(countryAvgRequests(redis, countryIso))
 	w.Header().Add("Content-Type", "application/json")
 	io.WriteString(w, `{"avg":`+avg+"}")
 }

@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func resolveDistance(country IP2countryResponse) int {
+func resolveDistance(db DBInterface, country IP2countryResponse) int {
 	distance := 0
 
 	if country.CountryCode == "AR" {
@@ -15,8 +15,8 @@ func resolveDistance(country IP2countryResponse) int {
 
 	hash := "distance-AR"
 
-	if exists(hash, country.CountryCode) {
-		str := retrieve(hash, country.CountryCode)
+	if db.Exists(hash, country.CountryCode) {
+		str := db.Retrieve(hash, country.CountryCode)
 		res, err := strconv.Atoi(str)
 		if err != nil {
 			log.Printf("Cannot parse %s to int", str)
@@ -26,7 +26,7 @@ func resolveDistance(country IP2countryResponse) int {
 
 	location := resolveCountryLocation(country)
 	distance = int(distanceFromARGinKM(location[0], location[1]))
-	store(hash, country.CountryCode, strconv.Itoa(distance))
+	db.Store(hash, country.CountryCode, strconv.Itoa(distance))
 
 	return distance
 }
