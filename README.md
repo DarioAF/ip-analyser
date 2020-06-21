@@ -10,7 +10,14 @@ docker-compose up --build
 ```
 This command will startup the main app and a [redis](https://redis.io/) server in your machine.<br />
 (Make sure you have [docker](https://www.docker.com/) properly installed)<br />
-<br />By default, the app will initialize at `http://localhost:8080`
+<br />By default, the app will initialize at `http://localhost:8080`<br />
+By calling the root route, you should see the following response:
+
+```json
+{
+    "status": "UP & Running"
+}
+```
 
 ---
 ## Endpoints:
@@ -102,4 +109,11 @@ output for `/avg-requests/BR` in our example:
 ```
 ```go
 (100)/1 = 100
+```
+
+---
+## Tests:
+Run the included tests by running:
+```
+go test
 ```

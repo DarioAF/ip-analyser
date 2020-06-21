@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	redis "github.com/go-redis/redis/v8"
@@ -160,6 +161,39 @@ func TestCountryRequestsHandler(t *testing.T) {
 
 		if string(body) != fmt.Sprintf(`{"avg":%d}`, expected) {
 			t.Errorf("response for /avg-requests/%s was %s, and we where expecting %d", country, body, expected)
+		}
+	}
+}
+
+func TestIPValidations(t *testing.T) {
+	var db DBInterface = &mockDB{}
+
+	scenarios := map[string]string{
+		"aaa":                           `{"error":"invalid input: invalid character 'a' looking for beginning of value"}`,
+		`{"ip": "9999.9999.9999.9999"}`: `{"error":"invalid ip"}`,
+	}
+
+	for post, expected := range scenarios {
+		req := httptest.NewRequest("POST", "http://localhost:8080/user", ioutil.NopCloser(strings.NewReader(post)))
+		w := httptest.NewRecorder()
+
+		userHandler(w, req, db)
+
+		resp := w.Result()
+		body, _ := ioutil.ReadAll(resp.Body)
+
+		st := resp.StatusCode
+		if st != 400 {
+			t.Errorf("avg-requests status must be 400, it was: %d", st)
+		}
+
+		ct := resp.Header.Get("Content-Type")
+		if ct != "application/json" {
+			t.Errorf("content type must be application/json, it was: %s", ct)
+		}
+
+		if string(body) != expected {
+			t.Errorf("response for invalid json was different from expected")
 		}
 	}
 }
