@@ -7,11 +7,27 @@ import (
 )
 
 func initServer() {
-	http.HandleFunc("/", handler)
-	http.HandleFunc("/user", userHandler)
-	http.HandleFunc("/nearest", nearestHandler)
-	http.HandleFunc("/farthest", farthestHandler)
-	http.HandleFunc("/avg-requests/", countryRequestsHandler)
+	var redis DBInterface = &RedisConnector
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		healthHandler(w, r, redis)
+	})
+
+	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		userHandler(w, r, redis)
+	})
+
+	http.HandleFunc("/nearest", func(w http.ResponseWriter, r *http.Request) {
+		distanceHandler(w, r, redis, "nearest")
+	})
+
+	http.HandleFunc("/farthest", func(w http.ResponseWriter, r *http.Request) {
+		distanceHandler(w, r, redis, "farthest")
+	})
+
+	http.HandleFunc("/avg-requests/", func(w http.ResponseWriter, r *http.Request) {
+		countryRequestsHandler(w, r, redis)
+	})
 
 	port := os.Getenv("PORT")
 	if port == "" {

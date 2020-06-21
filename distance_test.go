@@ -2,8 +2,6 @@ package main
 
 import (
 	"testing"
-
-	redis "github.com/go-redis/redis/v8"
 )
 
 func TestCalcDistance(t *testing.T) {
@@ -14,7 +12,16 @@ func TestCalcDistance(t *testing.T) {
 }
 
 func TestResolveDistance(t *testing.T) {
-	var db DBInterface = &mockDB{}
+	var db DBInterface = &mockDB{
+		exists: func(hash, key string) bool {
+			if key == "FIN" {
+				return true
+			}
+			return false
+		},
+		retrieve: func(hash, key string) string { return "13361" },
+	}
+
 	var countryAR IP2countryResponse = IP2countryResponse{"AR", "ARG", "Argentina"}
 	var countryFI IP2countryResponse = IP2countryResponse{"FI", "FIN", "Finland"}
 	var countryEH IP2countryResponse = IP2countryResponse{"EH", "ESH", "Western Sahara"}
@@ -34,23 +41,3 @@ func TestResolveDistance(t *testing.T) {
 		t.Errorf("from Argentina to Argentina there are 0 km and we calculed: %d km", dist)
 	}
 }
-
-type mockDB struct{}
-
-func (c *mockDB) Exists(hash, key string) bool {
-	if key == "FIN" {
-		return true
-	}
-	return false
-}
-func (c *mockDB) Retrieve(hash, key string) string {
-	return "13361"
-}
-
-// Unused methods in this scenario
-func (c *mockDB) TopScore(key string) redis.Z              { return redis.Z{} }
-func (c *mockDB) RetrieveScore(key, member string) float64 { return 0 }
-func (c *mockDB) RetrieveAllScores(key string) []redis.Z   { return []redis.Z{} }
-func (c *mockDB) Store(hash, key, value string)            {}
-func (c *mockDB) IncrTrend(key, member string)             {}
-func (c *mockDB) Ping() string                             { return "PONG" }

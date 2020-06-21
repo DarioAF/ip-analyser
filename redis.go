@@ -19,12 +19,13 @@ type DBInterface interface {
 	RetrieveAllScores(key string) []redis.Z
 }
 
-// RedisClient is the redis implementation of the defined db interface
+// RedisClient is the redis abstraction of the defined db interface
 type RedisClient struct {
 	client *redis.Client
 }
 
-var db = RedisClient{
+// RedisConnector is the redis implementation of the defined RedisClient
+var RedisConnector = RedisClient{
 	redis.NewClient(&redis.Options{
 		Addr:     os.Getenv("REDIS_URL"),
 		Password: "", // no password set

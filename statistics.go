@@ -68,18 +68,9 @@ func updateStatistics(db DBInterface, user User) {
 	updateStat(db, "nearest", hash, user, nearestStrategy)
 }
 
-func retrieveFarthest(db DBInterface) Statistic {
+func retrieveDistance(db DBInterface, key string) Statistic {
 	fromIata := "AR"
 	hash := "statistics-" + fromIata
-	key := "farthest"
-
-	return makeStatisticResponse(db.Retrieve(hash, key))
-}
-
-func retrieveNearest(db DBInterface) Statistic {
-	fromIata := "AR"
-	hash := "statistics-" + fromIata
-	key := "nearest"
 
 	return makeStatisticResponse(db.Retrieve(hash, key))
 }
