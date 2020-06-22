@@ -5,29 +5,23 @@ import (
 	"github.com/DarioAF/ip-analyser/pkg/model"
 )
 
-// Trends will be managed by country as trend-{ISO}
+// Scores will be stored by country as scores-{ISO}
 // Each IP will be a member of it, containing the #invocations
+var generateKey = func(iso string) string { return "scores-" + iso }
 
-func UpdateTrend(database db.DBInterface, user model.User) {
-	key := "trend-" + user.ISOCountry
-	member := user.IP
-
-	database.IncrTrend(key, member)
+// UpdateScore adds one to the current ip score or creates a new one with score: 1
+func UpdateScore(database db.Interface, user model.User) {
+	database.IncrScore(generateKey(user.ISOCountry), user.IP)
 }
 
-func IpScore(database db.DBInterface, country, ip string) int {
-	key := "trend-" + country
-	return int(database.RetrieveScore(key, ip))
+// CountryBestScore returns the top score for the specified country
+func CountryBestScore(database db.Interface, country string) int {
+	return int(database.TopScore(generateKey(country)).Score)
 }
 
-func CountryBestScore(database db.DBInterface, country string) int {
-	key := "trend-" + country
-	return int(database.TopScore(key).Score)
-}
-
-func CountryAvgRequests(database db.DBInterface, country string) int {
-	key := "trend-" + country
-	countryScores := database.RetrieveAllScores(key)
+// CountryAvgRequests sums all country scores and divide it by the total members (ip) of that country
+func CountryAvgRequests(database db.Interface, country string) int {
+	countryScores := database.RetrieveAllScores(generateKey(country))
 	members := len(countryScores)
 	if members == 0 {
 		return 0

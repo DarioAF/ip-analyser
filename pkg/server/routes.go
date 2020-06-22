@@ -26,7 +26,7 @@ func isValidIP(ip string) bool {
 	return net.ParseIP(ip) != nil
 }
 
-func userHandler(w http.ResponseWriter, req *http.Request, database db.DBInterface) {
+func userHandler(w http.ResponseWriter, req *http.Request, database db.Interface) {
 	var user ExternalUser
 
 	if err := json.NewDecoder(req.Body).Decode(&user); err != nil {
@@ -81,10 +81,7 @@ func userHandler(w http.ResponseWriter, req *http.Request, database db.DBInterfa
 		IsAWS:      isAWS,
 	}
 
-	elapsed := time.Since(start)
-	log.Printf("analysed ip: %s (%s) in %s", enhancedUser.IP, enhancedUser.Country, elapsed)
-
-	go service.UpdateTrend(database, enhancedUser)
+	go service.UpdateScore(database, enhancedUser)
 	go service.UpdateStatistics(database, enhancedUser)
 
 	res, err := json.Marshal(enhancedUser)
@@ -93,36 +90,32 @@ func userHandler(w http.ResponseWriter, req *http.Request, database db.DBInterfa
 		io.WriteString(w, fmt.Sprintf("There was an error marshaling our user: %v", err))
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	io.WriteString(w, string(res))
+	elapsed := time.Since(start)
+	log.Printf("analysed ip: %s (%s) in %s", enhancedUser.IP, enhancedUser.Country, elapsed)
+
+	serveResponse(w, http.StatusOK, string(res))
 }
 
-func distanceHandler(w http.ResponseWriter, r *http.Request, database db.DBInterface, impl string) {
+func distanceHandler(w http.ResponseWriter, r *http.Request, database db.Interface, impl string) {
 	stat := service.RetrieveDistance(database, impl)
-
 	res, err := json.Marshal(stat)
 	if err != nil {
 		log.Printf("There was an error marshaling our user! %err", err)
 	}
-
-	w.Header().Add("Content-Type", "application/json")
-	io.WriteString(w, string(res))
+	serveResponse(w, http.StatusOK, string(res))
 }
 
-func countryRequestsHandler(w http.ResponseWriter, r *http.Request, database db.DBInterface) {
+func countryRequestsHandler(w http.ResponseWriter, r *http.Request, database db.Interface) {
 	countryIso := r.URL.Path[len("/avg-requests/"):]
 	avg := strconv.Itoa(service.CountryAvgRequests(database, countryIso))
-	w.Header().Add("Content-Type", "application/json")
-	io.WriteString(w, `{"avg":`+avg+"}")
+	serveResponse(w, http.StatusOK, `{"avg":`+avg+"}")
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request, database db.DBInterface) {
-	health := "UP & Running"
-	w.Header().Add("Content-Type", "application/json")
-
+func healthHandler(w http.ResponseWriter, r *http.Request, database db.Interface) {
 	if database.Ping() != "PONG" {
-		health = "something is wrong with the db, please check your connection with it"
-		w.WriteHeader(http.StatusInternalServerError)
+		serveResponse(w, http.StatusInternalServerError,
+			fmt.Sprint(`{"status":"something is wrong with the db, please check your connection with it"}`))
+		return
 	}
-	io.WriteString(w, fmt.Sprintf(`{"status":"%s"}`, health))
+	serveResponse(w, http.StatusOK, fmt.Sprint(`{"status":"UP & Running"}`))
 }

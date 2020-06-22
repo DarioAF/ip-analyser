@@ -14,7 +14,7 @@ import (
 )
 
 func TestHealthHandlerWhenUP(t *testing.T) {
-	var database db.DBInterface = &db.MockDB{PingMock: "PONG"}
+	var database db.Interface = &db.MockDB{PingMock: "PONG"}
 
 	req := httptest.NewRequest("GET", "http://localhost:8080/", nil)
 	w := httptest.NewRecorder()
@@ -39,7 +39,7 @@ func TestHealthHandlerWhenUP(t *testing.T) {
 }
 
 func TestHealthHandlerWhenDOWN(t *testing.T) {
-	var database db.DBInterface = &db.MockDB{PingMock: ""}
+	var database db.Interface = &db.MockDB{PingMock: ""}
 
 	req := httptest.NewRequest("GET", "http://localhost:8080/", nil)
 	w := httptest.NewRecorder()
@@ -65,7 +65,7 @@ func TestHealthHandlerWhenDOWN(t *testing.T) {
 }
 
 func TestDistanceHandler(t *testing.T) {
-	var database db.DBInterface = &db.MockDB{
+	var database db.Interface = &db.MockDB{
 		RetrieveMock: func(hash, key string) string {
 			if hash != "statistics-AR" {
 				t.Errorf("trying to access a unknown hash for distance statistics: %s", key)
@@ -120,14 +120,14 @@ func TestDistanceHandler(t *testing.T) {
 }
 
 func TestCountryRequestsHandler(t *testing.T) {
-	var database db.DBInterface = &db.MockDB{
+	var database db.Interface = &db.MockDB{
 		RetrieveAllScoresMock: func(key string) []redis.Z {
-			if key == "trend-BR" {
+			if key == "scores-BR" {
 				return []redis.Z{
 					{Score: 100, Member: "2.2.2.2"},
 				}
 			}
-			if key == "trend-ES" {
+			if key == "scores-ES" {
 				return []redis.Z{
 					{Score: 50, Member: "3.3.3.3"},
 					{Score: 30, Member: "4.4.4.4"},
@@ -168,7 +168,7 @@ func TestCountryRequestsHandler(t *testing.T) {
 }
 
 func TestIPValidations(t *testing.T) {
-	var database db.DBInterface = &db.MockDB{}
+	var database db.Interface = &db.MockDB{}
 
 	scenarios := map[string]string{
 		"aaa":                           `{"error":"invalid input: invalid character 'a' looking for beginning of value"}`,

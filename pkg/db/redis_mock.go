@@ -7,7 +7,6 @@ type MockDB struct {
 	ExistsMock            func(hash, key string) bool
 	RetrieveMock          func(hash, key string) string
 	TopScoreMock          func(key string) redis.Z
-	RetrieveScoreMock     func(key, member string) float64
 	RetrieveAllScoresMock func(key string) []redis.Z
 }
 
@@ -23,10 +22,6 @@ func (c *MockDB) TopScore(key string) redis.Z {
 	return c.TopScoreMock(key)
 }
 
-func (c *MockDB) RetrieveScore(key, member string) float64 {
-	return c.RetrieveScoreMock(key, member)
-}
-
 func (c *MockDB) RetrieveAllScores(key string) []redis.Z {
 	return c.RetrieveAllScoresMock(key)
 }
@@ -36,4 +31,4 @@ func (c *MockDB) Ping() string {
 }
 
 func (c *MockDB) Store(hash, key, value string) {}
-func (c *MockDB) IncrTrend(key, member string)  {}
+func (c *MockDB) IncrScore(key, member string)  {}

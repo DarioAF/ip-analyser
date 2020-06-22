@@ -1,6 +1,7 @@
 package server
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -10,7 +11,7 @@ import (
 
 // Init initialize the server app
 func Init() {
-	var redis db.DBInterface = &db.RedisConnector
+	var redis db.Interface = &db.RedisConnector
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		healthHandler(w, r, redis)
@@ -41,4 +42,10 @@ func Init() {
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func serveResponse(w http.ResponseWriter, status int, body string) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
+	io.WriteString(w, body)
 }

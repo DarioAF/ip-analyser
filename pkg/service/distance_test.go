@@ -15,7 +15,7 @@ func TestCalcDistance(t *testing.T) {
 }
 
 func TestResolveDistance(t *testing.T) {
-	var database db.DBInterface = &db.MockDB{
+	var database db.Interface = &db.MockDB{
 		ExistsMock: func(hash, key string) bool {
 			if key == "FIN" {
 				return true

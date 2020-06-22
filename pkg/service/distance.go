@@ -9,14 +9,15 @@ import (
 	"github.com/DarioAF/ip-analyser/pkg/external"
 )
 
-func ResolveDistance(database db.DBInterface, country external.IP2countryResponse) int {
-	distance := 0
+// Distances will be stored with hash: distance-{ISO}
+// Since its allways from AR, is static
+var hash string = "distance-AR"
 
+// ResolveDistance will calc the distance only if it´s the first time the pair is seen, note that AR-AR is allways 0
+func ResolveDistance(database db.Interface, country external.IP2countryResponse) int {
 	if country.CountryCode == "AR" {
 		return 0
 	}
-
-	hash := "distance-AR"
 
 	if database.Exists(hash, country.CountryCode) {
 		str := database.Retrieve(hash, country.CountryCode)
@@ -28,7 +29,7 @@ func ResolveDistance(database db.DBInterface, country external.IP2countryRespons
 	}
 
 	location := external.ResolveCountryLocation(country)
-	distance = int(distanceFromARGinKM(location[0], location[1]))
+	distance := int(distanceFromARGinKM(location[0], location[1]))
 	database.Store(hash, country.CountryCode, strconv.Itoa(distance))
 
 	return distance

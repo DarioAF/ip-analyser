@@ -18,7 +18,7 @@ func makeStatisticResponse(str string) model.Statistic {
 	return model.Statistic{info[0], dst}
 }
 
-func updateStat(database db.DBInterface, stat, hash string, user model.User, strategy func(int, int) bool) {
+func updateStat(database db.Interface, stat, hash string, user model.User, strategy func(int, int) bool) {
 	if database.Exists(hash, stat) {
 		res := database.Retrieve(hash, stat)
 		val := strings.Split(res, "-")
@@ -57,7 +57,7 @@ func nearestStrategy(current, actual int) bool {
 	return current > actual
 }
 
-func UpdateStatistics(database db.DBInterface, user model.User) {
+func UpdateStatistics(database db.Interface, user model.User) {
 	fromIata := "AR"
 	hash := "statistics-" + fromIata
 
@@ -65,7 +65,7 @@ func UpdateStatistics(database db.DBInterface, user model.User) {
 	updateStat(database, "nearest", hash, user, nearestStrategy)
 }
 
-func RetrieveDistance(database db.DBInterface, key string) model.Statistic {
+func RetrieveDistance(database db.Interface, key string) model.Statistic {
 	fromIata := "AR"
 	hash := "statistics-" + fromIata
 
