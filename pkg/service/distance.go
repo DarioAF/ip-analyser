@@ -11,7 +11,7 @@ import (
 
 // Distances will be stored with hash: distance-{ISO}
 // Since its allways from AR, is static
-var hash string = "distance-AR"
+var distancehash string = "distance-AR"
 
 // ResolveDistance will calc the distance only if it´s the first time the pair is seen, note that AR-AR is allways 0
 func ResolveDistance(database db.Interface, country external.IP2countryResponse) int {
@@ -19,8 +19,8 @@ func ResolveDistance(database db.Interface, country external.IP2countryResponse)
 		return 0
 	}
 
-	if database.Exists(hash, country.CountryCode) {
-		str := database.Retrieve(hash, country.CountryCode)
+	if database.Exists(distancehash, country.CountryCode) {
+		str := database.Retrieve(distancehash, country.CountryCode)
 		res, err := strconv.Atoi(str)
 		if err != nil {
 			log.Printf("Cannot parse %s to int", str)
@@ -30,7 +30,7 @@ func ResolveDistance(database db.Interface, country external.IP2countryResponse)
 
 	location := external.ResolveCountryLocation(country)
 	distance := int(distanceFromARGinKM(location[0], location[1]))
-	database.Store(hash, country.CountryCode, strconv.Itoa(distance))
+	database.Store(distancehash, country.CountryCode, strconv.Itoa(distance))
 
 	return distance
 }
