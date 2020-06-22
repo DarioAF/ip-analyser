@@ -1,4 +1,4 @@
-package main
+package external
 
 import (
 	"encoding/json"
@@ -23,7 +23,7 @@ type IPv6Prefix struct {
 	Ipv6_prefix string
 }
 
-func resolveAWSPrefixes() IPRanges {
+func ResolveAWSPrefixes() IPRanges {
 	request := "https://ip-ranges.amazonaws.com/ip-ranges.json"
 	prefixes := IPRanges{}
 

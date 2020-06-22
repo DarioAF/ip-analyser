@@ -1,4 +1,4 @@
-package main
+package external
 
 import (
 	"encoding/json"
@@ -27,7 +27,7 @@ func (cr IP2countryResponse) isContinent() bool {
 	return false
 }
 
-func resolveCountry(ip string) (IP2countryResponse, error) {
+func ResolveCountry(ip string) (IP2countryResponse, error) {
 	country := IP2countryResponse{}
 	request := "https://api.ip2country.info/ip?" + ip
 

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/json"
@@ -10,6 +10,11 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/DarioAF/ip-analyser/pkg/db"
+	"github.com/DarioAF/ip-analyser/pkg/external"
+	"github.com/DarioAF/ip-analyser/pkg/model"
+	"github.com/DarioAF/ip-analyser/pkg/service"
 )
 
 // ExternalUser is the user's input info
@@ -17,21 +22,11 @@ type ExternalUser struct {
 	IP string
 }
 
-// User is our enhanced user, containing all the aditional info
-type User struct {
-	IP         string `json:"ip"`
-	Time       string `json:"time"`
-	Country    string `json:"country"`
-	ISOCountry string `json:"iso_country"`
-	Distance   int    `json:"distance"`
-	IsAWS      bool   `json:"is_aws"`
-}
-
 func isValidIP(ip string) bool {
 	return net.ParseIP(ip) != nil
 }
 
-func userHandler(w http.ResponseWriter, req *http.Request, db DBInterface) {
+func userHandler(w http.ResponseWriter, req *http.Request, database db.DBInterface) {
 	var user ExternalUser
 
 	if err := json.NewDecoder(req.Body).Decode(&user); err != nil {
@@ -48,7 +43,7 @@ func userHandler(w http.ResponseWriter, req *http.Request, db DBInterface) {
 		return
 	}
 
-	country, err := resolveCountry(user.IP)
+	country, err := external.ResolveCountry(user.IP)
 
 	if err != nil {
 		w.Header().Add("Content-Type", "application/json")
@@ -66,30 +61,31 @@ func userHandler(w http.ResponseWriter, req *http.Request, db DBInterface) {
 	var distance int
 	go func() {
 		defer wg.Done()
-		distance = resolveDistance(db, country)
+		distance = service.ResolveDistance(database, country)
 	}()
 
 	var isAWS bool
 	go func() {
 		defer wg.Done()
-		isAWS = isFromAWS(user.IP)
+		isAWS = service.IsFromAWS(user.IP)
 	}()
 
 	wg.Wait()
 
-	enhancedUser := User{
-		user.IP,
-		currentTime,
-		country.CountryName,
-		country.CountryCode,
-		distance,
-		isAWS}
+	enhancedUser := model.User{
+		IP:         user.IP,
+		Time:       currentTime,
+		Country:    country.CountryName,
+		ISOCountry: country.CountryCode,
+		Distance:   distance,
+		IsAWS:      isAWS,
+	}
 
 	elapsed := time.Since(start)
 	log.Printf("analysed ip: %s (%s) in %s", enhancedUser.IP, enhancedUser.Country, elapsed)
 
-	go updateTrend(db, enhancedUser)
-	go updateStatistics(db, enhancedUser)
+	go service.UpdateTrend(database, enhancedUser)
+	go service.UpdateStatistics(database, enhancedUser)
 
 	res, err := json.Marshal(enhancedUser)
 	if err != nil {
@@ -101,8 +97,8 @@ func userHandler(w http.ResponseWriter, req *http.Request, db DBInterface) {
 	io.WriteString(w, string(res))
 }
 
-func distanceHandler(w http.ResponseWriter, r *http.Request, db DBInterface, impl string) {
-	stat := retrieveDistance(db, impl)
+func distanceHandler(w http.ResponseWriter, r *http.Request, database db.DBInterface, impl string) {
+	stat := service.RetrieveDistance(database, impl)
 
 	res, err := json.Marshal(stat)
 	if err != nil {
@@ -113,18 +109,18 @@ func distanceHandler(w http.ResponseWriter, r *http.Request, db DBInterface, imp
 	io.WriteString(w, string(res))
 }
 
-func countryRequestsHandler(w http.ResponseWriter, r *http.Request, db DBInterface) {
+func countryRequestsHandler(w http.ResponseWriter, r *http.Request, database db.DBInterface) {
 	countryIso := r.URL.Path[len("/avg-requests/"):]
-	avg := strconv.Itoa(countryAvgRequests(db, countryIso))
+	avg := strconv.Itoa(service.CountryAvgRequests(database, countryIso))
 	w.Header().Add("Content-Type", "application/json")
 	io.WriteString(w, `{"avg":`+avg+"}")
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request, db DBInterface) {
+func healthHandler(w http.ResponseWriter, r *http.Request, database db.DBInterface) {
 	health := "UP & Running"
 	w.Header().Add("Content-Type", "application/json")
 
-	if db.Ping() != "PONG" {
+	if database.Ping() != "PONG" {
 		health = "something is wrong with the db, please check your connection with it"
 		w.WriteHeader(http.StatusInternalServerError)
 	}

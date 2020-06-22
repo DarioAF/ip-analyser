@@ -1,12 +1,11 @@
 package main
 
 import (
-	"log"
+	"github.com/DarioAF/ip-analyser/pkg/server"
 )
 
 // docker-compose up --build
 func main() {
-	log.Println("Hello World")
 
-	initServer()
+	server.Init()
 }

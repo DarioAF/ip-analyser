@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/json"
@@ -8,16 +8,18 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/DarioAF/ip-analyser/pkg/db"
+	"github.com/DarioAF/ip-analyser/pkg/model"
 	redis "github.com/go-redis/redis/v8"
 )
 
 func TestHealthHandlerWhenUP(t *testing.T) {
-	var db DBInterface = &mockDB{ping: "PONG"}
+	var database db.DBInterface = &db.MockDB{PingMock: "PONG"}
 
 	req := httptest.NewRequest("GET", "http://localhost:8080/", nil)
 	w := httptest.NewRecorder()
 
-	healthHandler(w, req, db)
+	healthHandler(w, req, database)
 
 	resp := w.Result()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -37,12 +39,12 @@ func TestHealthHandlerWhenUP(t *testing.T) {
 }
 
 func TestHealthHandlerWhenDOWN(t *testing.T) {
-	var db DBInterface = &mockDB{ping: ""}
+	var database db.DBInterface = &db.MockDB{PingMock: ""}
 
 	req := httptest.NewRequest("GET", "http://localhost:8080/", nil)
 	w := httptest.NewRecorder()
 
-	healthHandler(w, req, db)
+	healthHandler(w, req, database)
 
 	resp := w.Result()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -63,8 +65,8 @@ func TestHealthHandlerWhenDOWN(t *testing.T) {
 }
 
 func TestDistanceHandler(t *testing.T) {
-	var db DBInterface = &mockDB{
-		retrieve: func(hash, key string) string {
+	var database db.DBInterface = &db.MockDB{
+		RetrieveMock: func(hash, key string) string {
 			if hash != "statistics-AR" {
 				t.Errorf("trying to access a unknown hash for distance statistics: %s", key)
 				return ""
@@ -76,12 +78,12 @@ func TestDistanceHandler(t *testing.T) {
 		},
 	}
 
-	scenarios := map[string]Statistic{
-		"nearest": Statistic{
+	scenarios := map[string]model.Statistic{
+		"nearest": model.Statistic{
 			Country:  "BR",
 			Distance: 2821,
 		},
-		"farthest": Statistic{
+		"farthest": model.Statistic{
 			Country:  "ES",
 			Distance: 10274,
 		},
@@ -91,7 +93,7 @@ func TestDistanceHandler(t *testing.T) {
 		req := httptest.NewRequest("GET", "http://localhost:8080/"+impl, nil)
 		w := httptest.NewRecorder()
 
-		distanceHandler(w, req, db, impl)
+		distanceHandler(w, req, database, impl)
 
 		resp := w.Result()
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -118,8 +120,8 @@ func TestDistanceHandler(t *testing.T) {
 }
 
 func TestCountryRequestsHandler(t *testing.T) {
-	var db DBInterface = &mockDB{
-		retrieveAllScores: func(key string) []redis.Z {
+	var database db.DBInterface = &db.MockDB{
+		RetrieveAllScoresMock: func(key string) []redis.Z {
 			if key == "trend-BR" {
 				return []redis.Z{
 					{Score: 100, Member: "2.2.2.2"},
@@ -144,7 +146,7 @@ func TestCountryRequestsHandler(t *testing.T) {
 		req := httptest.NewRequest("GET", "http://localhost:8080/avg-requests/"+country, nil)
 		w := httptest.NewRecorder()
 
-		countryRequestsHandler(w, req, db)
+		countryRequestsHandler(w, req, database)
 
 		resp := w.Result()
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -166,7 +168,7 @@ func TestCountryRequestsHandler(t *testing.T) {
 }
 
 func TestIPValidations(t *testing.T) {
-	var db DBInterface = &mockDB{}
+	var database db.DBInterface = &db.MockDB{}
 
 	scenarios := map[string]string{
 		"aaa":                           `{"error":"invalid input: invalid character 'a' looking for beginning of value"}`,
@@ -177,7 +179,7 @@ func TestIPValidations(t *testing.T) {
 		req := httptest.NewRequest("POST", "http://localhost:8080/user", ioutil.NopCloser(strings.NewReader(post)))
 		w := httptest.NewRecorder()
 
-		userHandler(w, req, db)
+		userHandler(w, req, database)
 
 		resp := w.Result()
 		body, _ := ioutil.ReadAll(resp.Body)

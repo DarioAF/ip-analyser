@@ -1,14 +1,16 @@
-package main
+package service
 
 import (
 	"log"
 	"net"
 	"time"
+
+	"github.com/DarioAF/ip-analyser/pkg/external"
 )
 
 // IPRangesSnapshot is a simple snapshot to improve performance
 type IPRangesSnapshot struct {
-	snapshot    IPRanges
+	snapshot    external.IPRanges
 	lastUpdated time.Time
 }
 
@@ -19,15 +21,15 @@ func (snp *IPRangesSnapshot) isExpired() bool {
 
 var ipRangesSnapshot IPRangesSnapshot
 
-func resolveIPRanges() IPRanges {
+func resolveIPRanges() external.IPRanges {
 	if ipRangesSnapshot.isExpired() {
 		log.Print("Reloading AWS IP ranges snapshot...")
-		ipRangesSnapshot = IPRangesSnapshot{resolveAWSPrefixes(), time.Now()}
+		ipRangesSnapshot = IPRangesSnapshot{external.ResolveAWSPrefixes(), time.Now()}
 	}
 	return ipRangesSnapshot.snapshot
 }
 
-func isFromAWS(userIP string) bool {
+func IsFromAWS(userIP string) bool {
 	awsPrexixes := resolveIPRanges()
 
 	ip := net.ParseIP(userIP)

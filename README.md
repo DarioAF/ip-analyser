@@ -115,5 +115,5 @@ output for `/avg-requests/BR` in our example:
 ## Tests:
 Run the included tests by running:
 ```
-go test
+go test -v ./...
 ```

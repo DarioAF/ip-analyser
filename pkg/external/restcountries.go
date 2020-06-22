@@ -1,4 +1,4 @@
-package main
+package external
 
 import (
 	"encoding/json"
@@ -24,7 +24,7 @@ func findLatlng(countries []RestCountriesResponse, country IP2countryResponse) [
 	return [2]float64{0, 0}
 }
 
-func resolveCountryLocation(country IP2countryResponse) [2]float64 {
+func ResolveCountryLocation(country IP2countryResponse) [2]float64 {
 	locations := []RestCountriesResponse{}
 	request := "https://restcountries.eu/rest/v2/name/" + country.CountryCode
 

@@ -1,12 +1,15 @@
-package main
+package service
 
 import (
 	"log"
 	"math"
 	"strconv"
+
+	"github.com/DarioAF/ip-analyser/pkg/db"
+	"github.com/DarioAF/ip-analyser/pkg/external"
 )
 
-func resolveDistance(db DBInterface, country IP2countryResponse) int {
+func ResolveDistance(database db.DBInterface, country external.IP2countryResponse) int {
 	distance := 0
 
 	if country.CountryCode == "AR" {
@@ -15,8 +18,8 @@ func resolveDistance(db DBInterface, country IP2countryResponse) int {
 
 	hash := "distance-AR"
 
-	if db.Exists(hash, country.CountryCode) {
-		str := db.Retrieve(hash, country.CountryCode)
+	if database.Exists(hash, country.CountryCode) {
+		str := database.Retrieve(hash, country.CountryCode)
 		res, err := strconv.Atoi(str)
 		if err != nil {
 			log.Printf("Cannot parse %s to int", str)
@@ -24,9 +27,9 @@ func resolveDistance(db DBInterface, country IP2countryResponse) int {
 		return res
 	}
 
-	location := resolveCountryLocation(country)
+	location := external.ResolveCountryLocation(country)
 	distance = int(distanceFromARGinKM(location[0], location[1]))
-	db.Store(hash, country.CountryCode, strconv.Itoa(distance))
+	database.Store(hash, country.CountryCode, strconv.Itoa(distance))
 
 	return distance
 }

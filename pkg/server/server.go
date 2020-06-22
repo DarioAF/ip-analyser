@@ -1,13 +1,16 @@
-package main
+package server
 
 import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/DarioAF/ip-analyser/pkg/db"
 )
 
-func initServer() {
-	var redis DBInterface = &RedisConnector
+// Init initialize the server app
+func Init() {
+	var redis db.DBInterface = &db.RedisConnector
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		healthHandler(w, r, redis)
