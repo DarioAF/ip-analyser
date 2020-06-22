@@ -4,14 +4,14 @@
 </div>
 
 ---
-## Set up:
+# Set up:
 ```bash
 docker-compose up --build
 ```
 This command will startup the main app and a [redis](https://redis.io/) server in your machine.<br />
 (Make sure you have [docker](https://www.docker.com/) properly installed)<br />
 <br />By default, the app will initialize at `http://localhost:8080`<br />
-By calling the root route, you should see the following response:
+Call the root route and you should see the following response:
 
 ```json
 {
@@ -20,15 +20,15 @@ By calling the root route, you should see the following response:
 ```
 
 ---
-## Endpoints:
+# Endpoints:
 
-### 👨‍💻 User
+## 👨‍💻 User
 ```scala
 [POST] "/user"
 ```
 Takes an object `User` with the only information we have at this point (the ip address) and outputs the analysis result, containing all the aditional data we have collected from that ip address.
 
-#### Example
+### Example
 input object:
 ```json
 {
@@ -47,9 +47,18 @@ output:
     "is_aws": false
 }
 ```
-(We will talk about each of this items later on)
+These represent:
 
-### 📈 Analytics
+| Item | Description |
+| --- | --- |
+| *ip* | original ip from the input object |
+| *time* | time when the input object was received in GMT-0 |
+| *country* | country name from the received ip |
+| *iso_country* | country ISO code from the received ip |
+| *distance* | distance from Argentina to the received ip's country (km) |
+| *is_aws* | true if the received ip belongs to AWS |
+
+## 📈 Analytics
 The app collect data about each of the analysed ip addresses and makes it available through the following services<br />
 
 To simplify examples, imagine we collected this info:
@@ -67,7 +76,7 @@ To simplify examples, imagine we collected this info:
 ```
 Returns the nearest / farthest distance from **Argentina** to wherever the service was invoked in *km* <br />
 
-#### Example
+### Example
 
 output for `/nearest` in our example:
 ```json
@@ -90,7 +99,7 @@ output for `/farthest` in our example:
 ```
 Returns the request average for the specified country
 
-#### Example
+### Example
 
 output for `/avg-requests/ES` in our example:
 ```json
@@ -112,7 +121,7 @@ output for `/avg-requests/BR` in our example:
 ```
 
 ---
-## Tests:
+# Tests:
 Run the included tests by running:
 ```
 go test -v ./...

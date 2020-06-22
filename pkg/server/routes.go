@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -30,25 +29,18 @@ func userHandler(w http.ResponseWriter, req *http.Request, database db.Interface
 	var user ExternalUser
 
 	if err := json.NewDecoder(req.Body).Decode(&user); err != nil {
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, fmt.Sprintf(`{"error":"invalid input: %v"}`, err))
+		serveResponse(w, http.StatusBadRequest, fmt.Sprintf(`{"error":"invalid input: %v"}`, err))
 		return
 	}
-
 	if !isValidIP(user.IP) {
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, `{"error":"invalid ip"}`)
+		serveResponse(w, http.StatusBadRequest, `{"error":"invalid ip"}`)
 		return
 	}
 
 	country, err := external.ResolveCountry(user.IP)
 
 	if err != nil {
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()))
+		serveResponse(w, http.StatusBadRequest, fmt.Sprintf(`{"error":"%s"}`, err.Error()))
 		return
 	}
 
@@ -86,8 +78,10 @@ func userHandler(w http.ResponseWriter, req *http.Request, database db.Interface
 
 	res, err := json.Marshal(enhancedUser)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, fmt.Sprintf("There was an error marshaling our user: %v", err))
+		msj := fmt.Sprintf("there was an error marshaling generated user: %v", err)
+		log.Printf(msj)
+		serveResponse(w, http.StatusInternalServerError, fmt.Sprintf(`{"error":"%s"}`, msj))
+		return
 	}
 
 	elapsed := time.Since(start)
@@ -100,7 +94,10 @@ func distanceHandler(w http.ResponseWriter, r *http.Request, database db.Interfa
 	stat := service.RetrieveDistance(database, impl)
 	res, err := json.Marshal(stat)
 	if err != nil {
-		log.Printf("There was an error marshaling our user! %err", err)
+		msj := fmt.Sprintf(`{"error":""There was an error marshaling our user! %s"`, err)
+		log.Printf(msj)
+		serveResponse(w, http.StatusInternalServerError, fmt.Sprintf(`{"error":"%s"}`, msj))
+		return
 	}
 	serveResponse(w, http.StatusOK, string(res))
 }
